@@ -57,6 +57,18 @@ This is the section that makes it a *defeasible* note, not an assertion.
 `go` / `no-go` / `open`, derived. Note which experiments justify or refute it.
 ```
 
+## §4 vs `refuted_by` — don't let a defeater hide in prose
+
+§4 states what *would* defeat the claim. Those conditions belong in prose **only while they are
+hypothetical**. The moment a defeater is actually observed — you have evidence it holds — promote
+it to its own note (`kind: experiment` or `assumption`) and add its `id` to this claim's
+`refuted_by`. Then the engine flips the claim.
+
+A claim that stays `go` while its own §4 already cites evidence for a defeater is **lying by
+omission**: the engine can't read prose, so the graph shows it alive when the author has already
+written down why it isn't. `defnote NOTES_DIR` warns on exactly this — a `go` claim with a §4
+defeat section but an empty `refuted_by`.
+
 ## The rules the engine enforces / reports
 - `status` recomputed on every run from `justified_by` / `refuted_by` / `supersedes`.
 - A claim is **no-go** the moment a justification collapses or a refuter goes live —

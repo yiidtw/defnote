@@ -76,7 +76,7 @@ def load_notes(notes_dir):
     notes = {}
     for path in sorted(glob.glob(os.path.join(notes_dir, "*.md"))):
         with open(path, encoding="utf-8") as f:
-            fm, _ = parse_frontmatter(f.read())
+            fm, body = parse_frontmatter(f.read())
         if not fm or "id" not in fm:
             print(f"  ! skipped (no id/frontmatter): {os.path.basename(path)}", file=sys.stderr)
             continue
@@ -84,6 +84,7 @@ def load_notes(notes_dir):
         for k in LIST_FIELDS:
             fm.setdefault(k, [])
         fm["_path"] = path
+        fm["_body"] = body or ""
         notes[fm["id"]] = fm
     return notes
 
@@ -162,7 +163,21 @@ def write_status(note, status):
             f.write(new)
 
 
-def lint(notes):
+def defeat_section(body):
+    """Text under the first heading that mentions defeat/refute (the §4 'what would defeat it')."""
+    out, capturing = [], False
+    for ln in (body or "").splitlines():
+        if re.match(r"^\s*#{1,6}\s", ln):
+            if capturing:
+                break
+            capturing = bool(re.search(r"defeat|refut", ln, re.I))
+            continue
+        if capturing:
+            out.append(ln)
+    return "\n".join(out).strip()
+
+
+def lint(notes, result):
     warns = []
     ids = set(notes)
     for i, n in notes.items():
@@ -176,6 +191,12 @@ def lint(notes):
             ln = sum(1 for _ in f)
         if ln > LINE_CAP:
             warns.append(f"{i}: {ln} lines (>{LINE_CAP}) — split raw data into a linked file")
+        # a live claim whose own §4 describes a defeater, but nothing is wired into refuted_by:
+        # the engine can't read prose, so the graph shows it alive while the author wrote why it isn't.
+        if n["kind"] == "claim" and result.get(i, ("",))[0] == "go" and not n["refuted_by"]:
+            if len(defeat_section(n.get("_body", ""))) > 15:
+                warns.append(f"{i}: go, but §4 names a defeater and refuted_by is empty — if that "
+                             f"defeater is real, promote it to a note and wire refuted_by (else the claim omits it)")
     return warns
 
 
@@ -226,7 +247,7 @@ def cmd_run(argv):
         aff = affected_subtree(notes, r)
         if aff:
             print(f"\n  ⚠ {r} → no-go; downstream to re-check: {', '.join(sorted(aff))}")
-    for w in lint(notes):
+    for w in lint(notes, result):
         print(f"  ⚠ {w}", file=sys.stderr)
     print("\n" + ("(--check: nothing written)" if check else "status written back to frontmatter"))
 
