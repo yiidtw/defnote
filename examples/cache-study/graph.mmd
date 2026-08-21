@@ -1,0 +1,19 @@
+flowchart BT
+  e-bench1["e-bench1: cache cuts p99 latency 800ms -> 120ms (l"]:::go
+  c-win["c-win: the cache is always a net win"]:::nogo
+  c-default["c-default: enable the cache by default everywhere"]:::nogo
+  e-bench2["e-bench2: under memory pressure the cache thrashes"]:::go
+  c-eviction["c-eviction: add an eviction policy so the cache surv"]:::go
+  c-refined["c-refined: the cache is a net win only when memory "]:::go
+  c-warmup["c-warmup: the cache warms in under 1 second"]:::open
+  e-bench1 --> c-win
+  e-bench2 -. refutes .-> c-win
+  c-win --> c-default
+  e-bench1 --> c-eviction
+  e-bench2 --> c-eviction
+  e-bench1 --> c-refined
+  e-bench2 --> c-refined
+  c-refined -. supersedes .-> c-win
+  classDef go fill:#dafbe1,stroke:#1a7f37;
+  classDef nogo fill:#ffebe9,stroke:#cf222e,color:#8b949e;
+  classDef open fill:#eaeef2,stroke:#57606a;

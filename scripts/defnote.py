@@ -274,9 +274,68 @@ def cmd_new(argv):
     print(f"then recompute: python {os.path.basename(__file__)} {opts['dir']}")
 
 
+def cmd_graph(argv):
+    """Emit the graph: GraphViz DOT (default) or Mermaid (--mermaid, renders on GitHub).
+    DOT:      defnote.py graph NOTES_DIR | dot -Tsvg > g.svg
+    Mermaid:  defnote.py graph NOTES_DIR --mermaid   (paste into a ```mermaid fence)"""
+    args = [a for a in argv if not a.startswith("-")]
+    if not args:
+        print("usage: defnote.py graph NOTES_DIR [--mermaid]"); sys.exit(2)
+    notes = load_notes(args[0])
+    result = propagate(notes)
+
+    if "--mermaid" in argv:
+        cls = {"go": "go", "no-go": "nogo", "open": "open"}
+        out = ["flowchart BT"]
+        for i, n in notes.items():
+            lbl = (n.get("title", "") or i).replace('"', "'")[:40]
+            out.append(f'  {i}["{i}: {lbl}"]:::{cls[result[i][0]]}')
+        for i, n in notes.items():
+            for j in n["justified_by"]:
+                out.append(f"  {j} --> {i}")
+            for r in n["refuted_by"]:
+                out.append(f"  {r} -. refutes .-> {i}")
+            for s in n["supersedes"]:
+                out.append(f"  {i} -. supersedes .-> {s}")
+        out += ["  classDef go fill:#dafbe1,stroke:#1a7f37;",
+                "  classDef nogo fill:#ffebe9,stroke:#cf222e,color:#8b949e;",
+                "  classDef open fill:#eaeef2,stroke:#57606a;"]
+        print("\n".join(out))
+        return
+
+    edge = {"go": "#1a7f37", "no-go": "#cf222e", "open": "#57606a"}   # green / red / grey
+    fill = {"go": "#dafbe1", "no-go": "#ffebe9", "open": "#eaeef2"}
+    shape = {"experiment": "box", "claim": "ellipse", "assumption": "diamond"}
+
+    def esc(s):
+        return s.replace("\\", "").replace('"', "'")
+
+    out = ["digraph defnote {", "  rankdir=BT;",
+           '  node [style="filled,rounded", fontname="Helvetica", fontsize=10];',
+           '  edge [fontname="Helvetica", fontsize=8];']
+    for i, n in notes.items():
+        st = result[i][0]
+        strike = ' fontcolor="#8b949e"' if st == "no-go" else ""
+        out.append(f'  "{i}" [label="{esc(i)}\\n{esc(n.get("title",""))[:38]}", '
+                   f'shape={shape.get(n["kind"], "ellipse")}, color="{edge[st]}", '
+                   f'fillcolor="{fill[st]}"{strike}];')
+    for i, n in notes.items():
+        for j in n["justified_by"]:
+            out.append(f'  "{j}" -> "{i}" [color="#1a7f37"];')
+        for r in n["refuted_by"]:
+            out.append(f'  "{r}" -> "{i}" [color="#cf222e", style=dashed, label="refutes"];')
+        for s in n["supersedes"]:
+            out.append(f'  "{i}" -> "{s}" [color="#8b949e", style=dotted, label="supersedes"];')
+    out.append("}")
+    print("\n".join(out))
+
+
 def main():
-    if len(sys.argv) >= 2 and sys.argv[1] == "new":
+    cmd = sys.argv[1] if len(sys.argv) >= 2 else ""
+    if cmd == "new":
         cmd_new(sys.argv[2:])
+    elif cmd == "graph":
+        cmd_graph(sys.argv[2:])
     else:
         cmd_run(sys.argv[1:])
 
