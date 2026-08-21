@@ -74,8 +74,14 @@ it to its own note (`kind: experiment` or `assumption`) and add its `id` to this
 
 A claim that stays `go` while its own §4 already cites evidence for a defeater is **lying by
 omission**: the engine can't read prose, so the graph shows it alive when the author has already
-written down why it isn't. `adef NOTES_DIR` warns on exactly this — a `go` claim with a §4
-defeat section but an empty `refuted_by`.
+written down why it isn't. `adef NOTES_DIR` warns on exactly this — a `go` claim whose §4 **names
+an existing note id** that it has no edge to.
+
+The warning is deliberately **not** "§4 is non-empty". §4 is mandatory, and prose defeaters that
+are still hypothetical ("a fifth architecture where the correlation breaks") are exactly what it
+is for. A lint that fires on every conforming note teaches you to ignore the lint. Only a named,
+existing id is actionable — and the fix may be `justified_by` rather than `refuted_by`, because
+§4 also tends to be where authors mention the dependency a claim quietly rests on.
 
 ## The rules the engine enforces / reports
 - `status` recomputed on every run from `justified_by` / `refuted_by` / `supersedes`.

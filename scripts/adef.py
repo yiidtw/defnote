@@ -191,12 +191,22 @@ def lint(notes, result):
             ln = sum(1 for _ in f)
         if ln > LINE_CAP:
             warns.append(f"{i}: {ln} lines (>{LINE_CAP}) — split raw data into a linked file")
-        # a live claim whose own §4 describes a defeater, but nothing is wired into refuted_by:
-        # the engine can't read prose, so the graph shows it alive while the author wrote why it isn't.
-        if n["kind"] == "claim" and result.get(i, ("",))[0] == "go" and not n["refuted_by"]:
-            if len(defeat_section(n.get("_body", ""))) > 15:
-                warns.append(f"{i}: go, but §4 names a defeater and refuted_by is empty — if that "
-                             f"defeater is real, promote it to a note and wire refuted_by (else the claim omits it)")
+        # A live claim whose §4 names an EXISTING note that it has no edge to.
+        # The engine can't read prose, so if the author already wrote down a concrete
+        # note as a defeater (or a dependency) and never wired it, the graph is a lie.
+        #
+        # Deliberately NOT "§4 is non-empty": §4 is mandatory in the template and is the
+        # right place for defeaters that are still hypothetical ("a fifth architecture
+        # where this breaks"). Warning on those fires on every conforming note, which
+        # trains the reader to ignore the lint. Only a named, existing id is actionable.
+        if n["kind"] == "claim" and result.get(i, ("",))[0] == "go":
+            wired = set(n["justified_by"]) | set(n["refuted_by"]) | set(n["supersedes"]) | {i}
+            named = {r for r in re.findall(r"[A-Za-z][A-Za-z0-9]*(?:[-_][A-Za-z0-9]+)+",
+                                           defeat_section(n.get("_body", "")))
+                     if r in ids} - wired
+            for ref in sorted(named):
+                warns.append(f"{i}: go, and §4 names '{ref}' but there is no edge to it — wire it "
+                             f"into refuted_by if it defeats this, justified_by if it supports it")
     return warns
 
 
