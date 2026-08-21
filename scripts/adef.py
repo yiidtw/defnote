@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""defnote — defeasible experiment notebook engine.
+"""adef — defeasible experiment notebook engine.
 
 Reads a directory of note files (YYYYMMDD_HHMMSS_<slug>.md), builds the
 justification graph, and computes each note's go/no-go by JTMS-style propagation
@@ -16,10 +16,10 @@ Frontmatter schema (see docs/design/TEMPLATE.md):
     status: go               # DERIVED by the engine; never hand-set
 
 Commands:
-    python defnote.py NOTES_DIR                 # compute, write status back, print report
-    python defnote.py NOTES_DIR --check         # compute + report only, do not write
-    python defnote.py NOTES_DIR --impact ID     # what-if: if ID fell, which notes flip?
-    python defnote.py new KIND "TITLE" [opts]   # scaffold a new note with a correct filename
+    python adef.py NOTES_DIR                 # compute, write status back, print report
+    python adef.py NOTES_DIR --check         # compute + report only, do not write
+    python adef.py NOTES_DIR --impact ID     # what-if: if ID fell, which notes flip?
+    python adef.py new KIND "TITLE" [opts]   # scaffold a new note with a correct filename
         opts: --id X  --justified-by a,b  --refuted-by c  --supersedes d  --dir notes
 """
 import sys, os, re, glob
@@ -51,7 +51,7 @@ LEAF_BODY = "What was run, on what, and the numbers. Link to raw output if long.
 # ---------- I/O edge: parsing ----------
 
 def parse_frontmatter(text):
-    """Dependency-free reader for defnote's fixed, flat schema."""
+    """Dependency-free reader for adef's fixed, flat schema."""
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n?(.*)$", text, re.S)
     if not m:
         return None, text
@@ -210,7 +210,7 @@ def cmd_run(argv):
         idx = argv.index("--impact")
         impact = argv[idx + 1] if idx + 1 < len(argv) else None
     if not args:
-        print("usage: defnote.py NOTES_DIR [--check] [--impact ID]"); sys.exit(2)
+        print("usage: adef.py NOTES_DIR [--check] [--impact ID]"); sys.exit(2)
     notes = load_notes(args[0])
     if not notes:
         print("no notes found"); sys.exit(1)
@@ -233,7 +233,7 @@ def cmd_run(argv):
     result = propagate(notes)
     mark = {"go": "✓ go   ", "no-go": "✗ no-go", "open": "· open "}
     changed = []
-    print(f"defnote — {len(notes)} notes\n")
+    print(f"adef — {len(notes)} notes\n")
     for i in sorted(notes, key=lambda x: notes[x]["_path"]):
         status, reason = result[i]
         old = notes[i].get("status", "")
@@ -264,7 +264,7 @@ def cmd_new(argv):
         else:
             pos.append(a); i += 1
     if len(pos) < 2:
-        print('usage: defnote.py new KIND "TITLE" [--id X] [--justified-by a,b] [--refuted-by c] [--supersedes d] [--dir notes]'); sys.exit(2)
+        print('usage: adef.py new KIND "TITLE" [--id X] [--justified-by a,b] [--refuted-by c] [--supersedes d] [--dir notes]'); sys.exit(2)
     kind, title = pos[0], pos[1]
     if kind not in KINDS:
         print(f"kind must be {'/'.join(KINDS)}, got '{kind}'"); sys.exit(2)
@@ -297,11 +297,11 @@ def cmd_new(argv):
 
 def cmd_graph(argv):
     """Emit the graph: GraphViz DOT (default) or Mermaid (--mermaid, renders on GitHub).
-    DOT:      defnote.py graph NOTES_DIR | dot -Tsvg > g.svg
-    Mermaid:  defnote.py graph NOTES_DIR --mermaid   (paste into a ```mermaid fence)"""
+    DOT:      adef.py graph NOTES_DIR | dot -Tsvg > g.svg
+    Mermaid:  adef.py graph NOTES_DIR --mermaid   (paste into a ```mermaid fence)"""
     args = [a for a in argv if not a.startswith("-")]
     if not args:
-        print("usage: defnote.py graph NOTES_DIR [--mermaid]"); sys.exit(2)
+        print("usage: adef.py graph NOTES_DIR [--mermaid]"); sys.exit(2)
     notes = load_notes(args[0])
     result = propagate(notes)
 
@@ -331,7 +331,7 @@ def cmd_graph(argv):
     def esc(s):
         return s.replace("\\", "").replace('"', "'")
 
-    out = ["digraph defnote {", "  rankdir=BT;",
+    out = ["digraph adef {", "  rankdir=BT;",
            '  node [style="filled,rounded", fontname="Helvetica", fontsize=10];',
            '  edge [fontname="Helvetica", fontsize=8];']
     for i, n in notes.items():

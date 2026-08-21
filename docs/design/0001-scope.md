@@ -1,4 +1,4 @@
-# 0001 — What defnote is (scope & thesis)
+# 0001 — What adef is (scope & thesis)
 
 - Status: **accepted** (scope), **planned** (implementation) — 2026-08-21
 - Owning issue: none yet (project-level meta-decision; first issue opens with the engine)
@@ -46,7 +46,7 @@ An **immutable markdown notebook** (ADR/nanopublication-shaped notes) **plus a J
 propagation engine**: each note declares what justifies/refutes it; a new experiment result
 recomputes the whole graph's go/no-go and moves the defeated subtree into the **no-go**
 record, kept navigable as the negative result. Sibling of `decision-records`: that skill
-holds decisions that stand; defnote holds conclusions that can be defeated.
+holds decisions that stand; adef holds conclusions that can be defeated.
 
 Mechanism: DAG label-propagation over `justified_by` / `refuted_by` (provenance is acyclic,
 so full non-monotonic JTMS with backtracking is not needed — ATMS only if we later want

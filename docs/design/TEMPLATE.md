@@ -1,10 +1,10 @@
-# defnote note format
+# adef note format
 
 A note is one immutable markdown file. Filename: **`YYYYMMDD_HHMMSS_<snake_case>.md`**
 (time-sortable, unique, auto-generatable). **Cite a note by its short `id`, never by the
 filename** — the id is what edges and citations point at, and it must stay stable.
 
-`status` is **derived by the engine** (`scripts/defnote.py`) — never hand-set it.
+`status` is **derived by the engine** (`scripts/adef.py`) — never hand-set it.
 Keep a note **≤ 200 lines**; if you go over, move raw data/tables/logs into a linked
 file and keep the note's reasoning tight.
 
@@ -66,7 +66,7 @@ it to its own note (`kind: experiment` or `assumption`) and add its `id` to this
 
 A claim that stays `go` while its own §4 already cites evidence for a defeater is **lying by
 omission**: the engine can't read prose, so the graph shows it alive when the author has already
-written down why it isn't. `defnote NOTES_DIR` warns on exactly this — a `go` claim with a §4
+written down why it isn't. `adef NOTES_DIR` warns on exactly this — a `go` claim with a §4
 defeat section but an empty `refuted_by`.
 
 ## The rules the engine enforces / reports

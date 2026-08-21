@@ -1,16 +1,16 @@
 ---
-name: defnote
-description: Defeasible experiment notebook — records empirical conclusions as immutable notes in a justification graph, and when a later experiment refutes a prior conclusion it flips that note to no-go and propagates through everything that depended on it (JTMS-style). Use when keeping a lab/experiment log whose conclusions must stay honest as new evidence arrives, when a result overturns an earlier belief, or when you need to see which downstream conclusions a refuted result invalidates. Sibling of the decision-records (ADR) skill: ADR = "why I decided X" (design, permanent); defnote = "what I concluded from experiment X" (empirical, defeasible).
+name: adef
+description: Defeasible experiment notebook — records empirical conclusions as immutable notes in a justification graph, and when a later experiment refutes a prior conclusion it flips that note to no-go and propagates through everything that depended on it (JTMS-style). Use when keeping a lab/experiment log whose conclusions must stay honest as new evidence arrives, when a result overturns an earlier belief, or when you need to see which downstream conclusions a refuted result invalidates. Sibling of the decision-records (ADR) skill: ADR = "why I decided X" (design, permanent); adef = "what I concluded from experiment X" (empirical, defeasible).
 metadata:
   type: reference
   status: active
 ---
 
-# defnote — defeasible experiment notebook
+# adef — defeasible experiment notebook
 
-> ADR records a decision that stands. A defnote records a **conclusion that can be defeated** by later evidence. When it is, it does not get edited away — it moves to a **no-go** subtree, and everything justified by it is re-checked.
+> ADR records a decision that stands. A adef records a **conclusion that can be defeated** by later evidence. When it is, it does not get edited away — it moves to a **no-go** subtree, and everything justified by it is re-checked.
 
-Engine: `scripts/defnote.py` — pure JTMS DAG propagation, no external deps. Full thesis
+Engine: `scripts/adef.py` — pure JTMS DAG propagation, no external deps. Full thesis
 and prior-art map: [docs/design/0001-scope.md](docs/design/0001-scope.md); note format:
 [docs/design/TEMPLATE.md](docs/design/TEMPLATE.md).
 
@@ -47,13 +47,13 @@ its `justified_by`. The refuted subtree stays navigable as the **negative record
 
 Notes live in a `notes/` dir, one markdown file each (see
 [docs/design/TEMPLATE.md](docs/design/TEMPLATE.md)). Commands use
-`${CLAUDE_SKILL_DIR}/scripts/defnote.py` so they run from any working directory.
+`${CLAUDE_SKILL_DIR}/scripts/adef.py` so they run from any working directory.
 
 **Add a note** (auto-names the file `YYYYMMDD_HHMMSS_<slug>.md`):
 
 ```bash
-python ${CLAUDE_SKILL_DIR}/scripts/defnote.py new experiment "what I ran and measured" --dir notes
-python ${CLAUDE_SKILL_DIR}/scripts/defnote.py new claim "what I now conclude" --justified-by e-boostmeas --dir notes
+python ${CLAUDE_SKILL_DIR}/scripts/adef.py new experiment "what I ran and measured" --dir notes
+python ${CLAUDE_SKILL_DIR}/scripts/adef.py new claim "what I now conclude" --justified-by e-boostmeas --dir notes
 ```
 
 Then fill the body per the template — `experiment`/`assumption` for data (light),
@@ -62,7 +62,7 @@ Then fill the body per the template — `experiment`/`assumption` for data (ligh
 **Recompute go/no-go** — run after adding a note, or whenever a result changes:
 
 ```bash
-python ${CLAUDE_SKILL_DIR}/scripts/defnote.py notes
+python ${CLAUDE_SKILL_DIR}/scripts/adef.py notes
 ```
 
 Rewrites each note's derived `status` and lists anything that flipped plus its
@@ -75,7 +75,7 @@ recompute: the old note flips to no-go and stays as the negative record.
 **Blast radius before refuting:**
 
 ```bash
-python ${CLAUDE_SKILL_DIR}/scripts/defnote.py notes --impact <id>   # what falls if <id> goes?
+python ${CLAUDE_SKILL_DIR}/scripts/adef.py notes --impact <id>   # what falls if <id> goes?
 ```
 
 ### When to reach for this (agent maintaining a log)

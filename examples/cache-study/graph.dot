@@ -1,4 +1,4 @@
-digraph defnote {
+digraph adef {
   rankdir=BT;
   node [style="filled,rounded", fontname="Helvetica", fontsize=10];
   edge [fontname="Helvetica", fontsize=8];

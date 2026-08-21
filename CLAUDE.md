@@ -1,8 +1,8 @@
-# CLAUDE.md — rules for agents working on defnote
+# CLAUDE.md — rules for agents working on adef
 
 ## What this repo is
-This repo root **is a Claude skill** (`SKILL.md` at root, `name: defnote`). Keep it that
-way: clone into `~/.claude/skills/defnote` must Just Work → `name` field == folder name.
+This repo root **is a Claude skill** (`SKILL.md` at root, `name: adef`). Keep it that
+way: clone into `~/.claude/skills/adef` must Just Work → `name` field == folder name.
 
 ## Decision discipline (this project eats its own dog food)
 - Design decisions go in `docs/design/NNNN-*.md`, immutable, five-section form
@@ -16,7 +16,7 @@ way: clone into `~/.claude/skills/defnote` must Just Work → `name` field == fo
   must equal the directory name. Prefer gerund/descriptive; discovery rides on `description`.
 
 ## Language
-- Skill + engine in **Python** for now. Keep `scripts/defnote.py` a **pure, I/O-free**
+- Skill + engine in **Python** for now. Keep `scripts/adef.py` a **pure, I/O-free**
   propagation module (read/write happens at the edges) so it can later be extracted to a
   standalone Rust tool without a rewrite of the core.
 
