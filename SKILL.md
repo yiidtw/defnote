@@ -49,7 +49,8 @@ Notes live in a `notes/` dir, one markdown file each (see
 [docs/design/TEMPLATE.md](docs/design/TEMPLATE.md)). Commands use
 `${CLAUDE_SKILL_DIR}/scripts/adef.py` so they run from any working directory.
 
-**Add a note** (auto-names the file `YYYYMMDD_HHMMSS_<slug>.md`):
+**Add a note** — always with `new`, which stamps the real time into the filename
+`YYYYMMDD_HHMMSS_<slug>.md`. Writing the file yourself means inventing that time:
 
 ```bash
 python ${CLAUDE_SKILL_DIR}/scripts/adef.py new experiment "what I ran and measured" --dir notes

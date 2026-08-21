@@ -1,8 +1,16 @@
 # adef note format
 
-A note is one immutable markdown file. Filename: **`YYYYMMDD_HHMMSS_<snake_case>.md`**
-(time-sortable, unique, auto-generatable). **Cite a note by its short `id`, never by the
-filename** — the id is what edges and citations point at, and it must stay stable.
+A note is one immutable markdown file. Filename: **`YYYYMMDD_HHMMSS_<snake_case>.md`**.
+
+**The timestamp comes from the clock. `adef.py new` stamps it — never hand-name a note.**
+An agent writing the file itself has no clock, so it invents a plausible-looking time, and
+the invented times come out on round hours. That is a fabricated observation sitting in a
+notebook whose whole purpose is an honest empirical record. It is also what the engine
+**sorts its output by**, so the invented times become the chronology every reader sees.
+Renaming a note for a shorter slug is fine — keep the timestamp byte-for-byte.
+
+**Cite a note by its short `id`, never by the filename** — the id is what edges and
+citations point at, and it must stay stable.
 
 `status` is **derived by the engine** (`scripts/adef.py`) — never hand-set it.
 Keep a note **≤ 200 lines**; if you go over, move raw data/tables/logs into a linked
