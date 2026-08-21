@@ -51,6 +51,27 @@ flowchart BT
 Green = go, red = no-go (refuted / superseded / cascaded), grey = open. Solid = justifies,
 dashed = refutes, dotted = supersedes.
 
+## Install
+
+defnote is a [Claude Code skill](https://code.claude.com/docs/en/skills) — a capability Claude
+loads and uses when it's relevant. It isn't on a marketplace yet; to try it now, clone the repo
+straight into your skills directory. The repo root *is* the skill, so the folder **must** be
+named `defnote` (it has to match the `name` in `SKILL.md`):
+
+```bash
+# personal — available across all your projects:
+git clone https://github.com/yiidtw/defnote.git ~/.claude/skills/defnote
+
+# or per-project — checked into a repo and shared with your team:
+git clone https://github.com/yiidtw/defnote.git .claude/skills/defnote
+```
+
+Claude Code picks it up live (no restart). Invoke it with `/defnote`, or it triggers on its own
+while you keep an experiment log. The engine needs **Python 3** (no other dependencies).
+
+A `.claude-plugin/plugin.json` + a marketplace entry (for `/plugin install`) will follow once
+it's had more real use.
+
 ## Quickstart
 
 ```bash
