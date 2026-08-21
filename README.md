@@ -60,10 +60,10 @@ named `adef` (it has to match the `name` in `SKILL.md`):
 
 ```bash
 # personal — available across all your projects:
-git clone https://github.com/yiidtw/adef.git ~/.claude/skills/adef
+git clone https://github.com/yiidtw/adef-skill.git ~/.claude/skills/adef
 
 # or per-project — checked into a repo and shared with your team:
-git clone https://github.com/yiidtw/adef.git .claude/skills/adef
+git clone https://github.com/yiidtw/adef-skill.git .claude/skills/adef
 ```
 
 Claude Code picks it up live (no restart). Invoke it with `/adef`, or it triggers on its own
