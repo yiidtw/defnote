@@ -11,6 +11,13 @@ Sibling of the ADR pattern:
 - **ADR** = *why I decided X* — design, permanent.
 - **defnote** = *what I concluded from experiment X* — empirical, **defeasible**.
 
+## The name
+
+**defnote** = **def**easible + **note**. In logic, a *defeasible* conclusion is one that can be
+**defeated** — withdrawn when later evidence goes against it (from *defeasible reasoning* /
+*defeasible logic*). That is exactly what a note here is: its go/no-go standing is provisional
+and updates automatically as experiments arrive.
+
 ## What it looks like
 
 Worked example ([`examples/cache-study/`](examples/cache-study)) — does a cache help? An early
@@ -76,5 +83,29 @@ python scripts/defnote.py graph notes --mermaid                 # Mermaid (rende
 - Thesis, prior-art map, ownable boundary: [`docs/design/0001-scope.md`](docs/design/0001-scope.md)
 - Note format: [`docs/design/TEMPLATE.md`](docs/design/TEMPLATE.md)
 
-Background: [Truth Maintenance Systems](https://en.wikipedia.org/wiki/Reason_maintenance)
-(Doyle 1979 / de Kleer 1986) for the propagation; ADRs (Nygard 2011) for the note shape.
+## References — what we built on
+
+defnote is an **assembly** of well-established ideas, not a new mechanism. The pieces:
+
+- **Truth Maintenance Systems** — Jon Doyle, *A Truth Maintenance System* (JTMS, 1979); Johan
+  de Kleer, *An Assumption-based TMS* (ATMS, 1986). Retract-and-propagate: withdraw a premise,
+  dependent beliefs flip and the change cascades. defnote's go/no-go is a DAG-restricted JTMS.
+- **Belief revision (AGM)** — Alchourrón, Gärdenfors & Makinson (1985). The theory TMS operationalizes.
+- **Architecture Decision Records** — Michael Nygard (2011). The immutable "record with the why,
+  overturn by superseding" note shape.
+- **IBIS** — Rittel & Kunz (1970); Conklin & Begeman, *gIBIS* (1988). The argumentation graph
+  (issue / position / for-and-against) that ADRs descend from.
+- **Nanopublications** — Groth, Gibson & Velterop (2010). Immutable claim + provenance, retracted
+  or superseded rather than edited — the model for scientific-claim notes.
+- **Electronic lab notebooks** — e.g. [eLabFTW](https://www.elabftw.net/). Immutable, versioned
+  notebooks — which, notably, do *not* propagate belief; that is defnote's addition.
+- **Architectural decision graphs** — Kruchten, *An Ontology of Architectural Design Decisions*
+  (2004); Zimmermann et al., decision models with dependency relations + production rules (2009).
+  Typed decision-dependency graphs with propagation — the graph half, done 20 years ago.
+- **DMN** (OMG, 2015) — decisions-as-a-graph, standardized (for operational decisions).
+- **Stage-Gate** — Robert Cooper (1980s). The go / no-go / kill vocabulary.
+
+The one thing defnote owns is the **combination** — a lab notebook where an experiment flips a
+prior conclusion's go/no-go and propagates through the dependency graph, keeping the refuted
+subtree navigable. The claim is *architectural*, not novel. See
+[`docs/design/0001-scope.md`](docs/design/0001-scope.md) §4.
