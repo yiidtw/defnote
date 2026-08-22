@@ -69,6 +69,11 @@ python ${CLAUDE_SKILL_DIR}/scripts/adef.py notes
 Rewrites each note's derived `status` and lists anything that flipped plus its
 downstream. Add `--check` to preview without writing.
 
+**Keep the notebook under version control.** Notes are immutable — you overturn a
+conclusion by adding one that supersedes it, never by editing the old one. Nothing in the
+engine enforces that; git does, by making an edit visible. Outside a repo the rule is a
+convention with nothing behind it, so the engine warns.
+
 **Overturn a prior conclusion** — never edit the old note. Add a new one that
 `supersedes` it (or an experiment listed in the old note's `refuted_by`), then
 recompute: the old note flips to no-go and stays as the negative record.
@@ -83,3 +88,22 @@ python ${CLAUDE_SKILL_DIR}/scripts/adef.py notes --impact <id>   # what falls if
 - A run concludes something worth keeping → `new claim` justified by the run's `experiment` note.
 - A new result contradicts an existing note → `new` claim that supersedes it, then recompute.
 - "Is X still true?" → recompute, read the note's `status` + reason.
+
+## Filing the work a refutation creates
+
+`--impact <id> --issue` files the re-check list as an issue on the repo's tracker
+(GitHub via `gh`; GitLab via `glab`, best-effort). Run it again for the same id and it
+comments on the existing issue instead of opening a second one.
+
+```bash
+python ${CLAUDE_SKILL_DIR}/scripts/adef.py notes --impact e-boostmeas --issue
+```
+
+**It is deliberately one-way.** A note is an immutable record whose status is *derived*;
+an issue is work with an owner and a hand-set open/closed state. Mirroring the two would
+push hand-set state into a derived system, and the first time an issue is closed while its
+note is still `go`, neither answer is right. So the notebook files the *work* a refutation
+creates, and nothing syncs back: closing the issue changes no note.
+
+With no tracker — no `gh`/`glab`, or no GitHub/GitLab origin — it prints the issue text
+instead of failing.

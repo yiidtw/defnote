@@ -19,15 +19,55 @@ Commands:
     python adef.py NOTES_DIR                 # compute, write status back, print report
     python adef.py NOTES_DIR --check         # compute + report only, do not write
     python adef.py NOTES_DIR --impact ID     # what-if: if ID fell, which notes flip?
+    python adef.py NOTES_DIR --impact ID --issue   # ...and file that re-check work as a
+                                             # github/gitlab issue (one-way: nothing syncs back)
     python adef.py new KIND "TITLE" [opts]   # scaffold a new note with a correct filename
         opts: --id X  --justified-by a,b  --refuted-by c  --supersedes d  --dir notes
 """
-import sys, os, re, glob
+import sys, os, re, glob, shutil, subprocess
 from datetime import datetime
 
 LIST_FIELDS = ("justified_by", "refuted_by", "supersedes")
 KINDS = ("claim", "experiment", "assumption")
 LINE_CAP = 200  # soft: over this, split raw data into a linked file
+
+# Stopwords dropped when deriving an id from a title: "a fresh clone works" should
+# give e-fresh-clone, not e-a-fresh.
+ID_STOPWORDS = {"a", "an", "the", "is", "are", "was", "were", "be", "of", "to", "in",
+                "on", "for", "and", "or", "that", "this", "it", "its", "with", "as",
+                "at", "by", "from", "not", "no"}
+
+
+def under_version_control(path):
+    """True if `path` sits inside a git working tree.
+
+    Walked in pure Python rather than shelling out, so the engine keeps working where
+    git is absent. `.git` is a directory in a normal clone and a FILE in a worktree or
+    submodule, hence os.path.exists rather than isdir.
+    """
+    p = os.path.abspath(path)
+    while True:
+        if os.path.exists(os.path.join(p, ".git")):
+            return True
+        parent = os.path.dirname(p)
+        if parent == p:
+            return False
+        p = parent
+
+
+def warn_unversioned(notes_dir):
+    """A notebook outside version control has immutability in name only.
+
+    Notes are supposed to be immutable: you overturn a conclusion by adding a note that
+    supersedes it, never by editing the old one. Nothing in this engine enforces that --
+    git does, by making an edit visible. Outside a repo, someone can quietly rewrite a
+    conclusion and no trace of the original survives.
+    """
+    if under_version_control(notes_dir):
+        return
+    print(f"  \u26a0 {notes_dir} is not under version control -- notes are immutable by "
+          f"convention only, and an edited conclusion would leave no trace. `git init` "
+          f"where the notebook lives.", file=sys.stderr)
 
 CLAIM_BODY = """
 ## 1. What we tested
@@ -210,27 +250,120 @@ def lint(notes, result):
     return warns
 
 
+# ---------- I/O edge: filing the work a refutation creates ----------
+#
+# One-way, on purpose. A note is an immutable record whose status is DERIVED; an issue is
+# work with an owner and a hand-set open/closed state. Mirroring the two would put hand-set
+# state into a derived system, and the first time an issue is closed while its note is still
+# `go` there is no honest answer to which one is true. So: the notebook can file the work a
+# refutation creates, and nothing ever syncs back.
+
+def remote_host(notes_dir):
+    """github / gitlab / None, read from the enclosing repo's origin."""
+    try:
+        url = subprocess.run(["git", "-C", notes_dir, "remote", "get-url", "origin"],
+                             capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception:
+        return None
+    if "github.com" in url:
+        return "github"
+    if "gitlab" in url:
+        return "gitlab"
+    return None
+
+
+def issue_text(notes, target, flipped):
+    title = f"re-check what depended on {target}"
+    body = [f"`{target}` — {notes[target].get('title', '')} — is no-go. "
+            f"This issue tracks the work that follows from it.", ""]
+    if flipped:
+        body.append("Downstream notes to re-check:")
+        for i in sorted(flipped):
+            body.append(f"- `{i}` — {notes[i].get('title', '')}")
+    else:
+        body.append("Nothing downstream depends on it — no cascade.")
+    body += ["",
+             "The record stays in the notebook. Notes are immutable and their status is "
+             "derived from the justification graph, so nothing here syncs back: closing this "
+             "issue does not change any note, and reopening it does not revive a conclusion.",
+             "", f"adef-note: {target}"]
+    return title, "\n".join(body)
+
+
+def file_issue(notes, target, flipped, notes_dir):
+    """Create the issue, or comment on the one already filed for this note."""
+    title, body = issue_text(notes, target, flipped)
+    marker = f"adef-note: {target}"
+    host = remote_host(notes_dir)
+    cli = {"github": "gh", "gitlab": "glab"}.get(host)
+
+    def unfiled(why):
+        print(f"\n-- {why}; the issue, unfiled --\n\ntitle: {title}\n\n{body}")
+
+    if not cli:
+        return unfiled("no github/gitlab origin found")
+    if not shutil.which(cli):
+        return unfiled(f"{cli} is not installed")
+
+    def run(args):
+        return subprocess.run(args, cwd=notes_dir, capture_output=True, text=True, timeout=60)
+
+    try:
+        if host == "github":
+            found = run(["gh", "issue", "list", "--search", marker, "--state", "all",
+                         "--limit", "1", "--json", "number", "--jq", ".[0].number"])
+            num = found.stdout.strip()
+            if num:
+                r = run(["gh", "issue", "comment", num, "--body", body])
+                print(f"\nupdated issue #{num}: {r.stdout.strip() or 'commented'}")
+            else:
+                r = run(["gh", "issue", "create", "--title", title, "--body", body])
+                print(f"\nfiled: {r.stdout.strip()}")
+            if r.returncode != 0:
+                unfiled(f"{cli} failed: {r.stderr.strip()[:200]}")
+        else:
+            # glab is best-effort: its list output is text, not JSON, so the existing-issue
+            # lookup reads the leading #<iid>. Falls back to printing on any surprise.
+            found = run(["glab", "issue", "list", "--search", marker, "--all"])
+            m = re.search(r"#(\d+)", found.stdout or "")
+            if m:
+                r = run(["glab", "issue", "note", m.group(1), "--message", body])
+                print(f"\nupdated issue #{m.group(1)}")
+            else:
+                r = run(["glab", "issue", "create", "--title", title, "--description", body])
+                print(f"\nfiled: {r.stdout.strip()}")
+            if r.returncode != 0:
+                unfiled(f"glab failed: {r.stderr.strip()[:200]}")
+    except Exception as e:
+        unfiled(f"{cli} error: {e}")
+
+
 # ---------- commands ----------
 
 def cmd_run(argv):
     args = [a for a in argv if not a.startswith("-")]
     check = "--check" in argv
+    want_issue = "--issue" in argv
     impact = None
     if "--impact" in argv:
         idx = argv.index("--impact")
         impact = argv[idx + 1] if idx + 1 < len(argv) else None
     if not args:
-        print("usage: adef.py NOTES_DIR [--check] [--impact ID]"); sys.exit(2)
+        print("usage: adef.py NOTES_DIR [--check] [--impact ID [--issue]]"); sys.exit(2)
     notes = load_notes(args[0])
     if not notes:
         print("no notes found"); sys.exit(1)
+    warn_unversioned(args[0])
 
     if impact:
         if impact not in notes:
             print(f"no such id: {impact}"); sys.exit(2)
         base = propagate(notes)
         hyp = propagate(notes, forced_nogo={impact})
-        flipped = [i for i in notes if base[i][0] == "go" and hyp[i][0] != "go"]
+        # Exclude the target itself: it flips by assumption, and counting it inflated
+        # every cascade by one ("1 note would flip" when nothing depended on it).
+        flipped = [i for i in notes
+                   if i != impact and base[i][0] == "go" and hyp[i][0] != "go"]
         print(f"what-if: if {impact} were refuted...")
         if flipped:
             for i in sorted(flipped):
@@ -238,6 +371,8 @@ def cmd_run(argv):
             print(f"\n{len(flipped)} note(s) would flip to no-go.")
         else:
             print("  nothing downstream depends on it — no cascade.")
+        if want_issue:
+            file_issue(notes, impact, flipped, args[0])
         return
 
     result = propagate(notes)
@@ -279,7 +414,8 @@ def cmd_new(argv):
     if kind not in KINDS:
         print(f"kind must be {'/'.join(KINDS)}, got '{kind}'"); sys.exit(2)
     slug = (re.sub(r"[^a-z0-9]+", "_", title.lower()).strip("_") or "note")[:60]
-    nid = opts["id"] or f"{kind[0]}-{'-'.join(slug.split('_')[:2])}"
+    words = [w for w in slug.split("_") if w not in ID_STOPWORDS] or slug.split("_")
+    nid = opts["id"] or f"{kind[0]}-{'-'.join(words[:2])}"
     os.makedirs(opts["dir"], exist_ok=True)
     existing = set(load_notes(opts["dir"]))
     base, k = nid, 2
@@ -303,6 +439,7 @@ def cmd_new(argv):
         f.write("\n".join(fm) + "\n" + body)
     print(f"created {path}  (id: {nid})")
     print(f"then recompute: python {os.path.basename(__file__)} {opts['dir']}")
+    warn_unversioned(opts["dir"])
 
 
 def cmd_graph(argv):

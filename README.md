@@ -72,6 +72,8 @@ while you keep an experiment log. The engine needs **Python 3** (no other depend
 A `.claude-plugin/plugin.json` + a marketplace entry (for `/plugin install`) will follow once
 it's had more real use.
 
+Licensed MIT — see [LICENSE](LICENSE).
+
 ## Quickstart
 
 ```bash
