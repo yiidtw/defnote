@@ -1,5 +1,10 @@
 # CLAUDE.md — rules for agents working on adef
 
+> **Using adef rather than developing it?** You want [SKILL.md](SKILL.md) and
+> [README.md](README.md). This file is the maintainer's discipline for changing adef
+> itself; it is inert in an installed skill directory (a skill folder is not a project
+> root, so Claude Code does not load it).
+
 ## What this repo is
 This repo root **is a Claude skill** (`SKILL.md` at root, `name: adef`). Keep it that
 way: clone into `~/.claude/skills/adef` must Just Work → `name` field == folder name.
